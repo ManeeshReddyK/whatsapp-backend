@@ -2,6 +2,23 @@ const mongoose = require('mongoose');
 
 const Schema = mongoose.Schema;
 
+let contactSchema = new Schema({
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    conversation_Id: {
+        type: Schema.Types.ObjectId,
+        ref: "Conversation",
+        required: true
+    },
+    lastMessage_Id: {
+        type: Schema.Types.ObjectId,
+        ref: "Message",
+    }
+})
+
 let userSchema = new Schema({
     email: {
         type: String,
@@ -11,7 +28,8 @@ let userSchema = new Schema({
     password: {
         type: String,
         required: true,
-    }
+    },
+    contacts: [contactSchema]
 });
 
 module.exports = mongoose.model('User', userSchema);

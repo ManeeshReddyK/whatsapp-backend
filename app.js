@@ -2,9 +2,11 @@ if (!process.env.NODE_ENV) {
     require('dotenv').config();
 }
 const express = require('express');
+
 const { logger, requestLogger, log4js } = require('./logs/log4js');
 const mongoose = require('mongoose');
-const authRoutes = require('./router/auth.routes')
+const authRoutes = require('./router/auth.routes');
+const serviceRoutes = require('./router/services.routes');
 
 const app = express();
 
@@ -13,6 +15,8 @@ app.use(log4js.connectLogger(requestLogger));
 app.use(express.json());
 
 app.use('/auth', authRoutes);
+
+app.use('/api', serviceRoutes);
 
 app.use((error, req, res, next) => {
     return res.json({

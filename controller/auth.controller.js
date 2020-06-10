@@ -23,7 +23,8 @@ exports.register = (req, res, next) => {
                     .then((hashedPassword) => {
                         let body = {
                             email: userEmail,
-                            password: hashedPassword
+                            password: hashedPassword,
+                            contacts: []
                         }
                         User.create(body)
                             .then((user) => {
