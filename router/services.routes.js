@@ -9,4 +9,8 @@ router.get('/getUserProfile', loginRequired, serviceController.getUserProfile);
 
 router.get('/getUserMessages', loginRequired, serviceController.getUserMessages);
 
+router.get('/addUser/:email', loginRequired, serviceController.addUser);
+
+router.delete('/deleteUser/:userId', loginRequired, serviceController.deleteUser);
+
 module.exports = router;

@@ -29,6 +29,16 @@ let userSchema = new Schema({
         type: String,
         required: true,
     },
+    status: {
+        type: Boolean,
+        default: false,
+        required: true
+    },
+    lastSeen: {
+        type: Date,
+        default: new Date(),
+        required: true
+    },
     contacts: [contactSchema]
 });
 

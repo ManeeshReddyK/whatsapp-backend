@@ -20,6 +20,15 @@ module.exports = (req, res, next) => {
         error.message = `Unauthorised`;
         return next(error);
     }
+
+    if (req.url === '/validateToken') {
+        return res.json({
+            success: true,
+            status: 200,
+            message: `Token has verified successfully`
+        })
+    }
+
     logger.info(`Token has verified successfully`);
     req.userId = decodedToken.id;
     next();
