@@ -13,4 +13,10 @@ router.get('/addUser/:email', loginRequired, serviceController.addUser);
 
 router.delete('/deleteUser/:userId', loginRequired, serviceController.deleteUser);
 
+router.delete('/deactivateAccount', loginRequired, serviceController.deactivateAccount);
+
+router.get('/urlForUserProfile', loginRequired, serviceController.urlForUserProfile);
+
+router.put('/userProfileImage', loginRequired, serviceController.uploadUserProfile);
+
 module.exports = router;

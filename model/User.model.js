@@ -23,7 +23,7 @@ let userSchema = new Schema({
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
     },
     password: {
         type: String,
@@ -37,6 +37,11 @@ let userSchema = new Schema({
     lastSeen: {
         type: Date,
         default: new Date(),
+        required: true
+    },
+    profileImage: {
+        type: String,
+        default: "https://material.angular.io/assets/img/examples/shiba1.jpg",
         required: true
     },
     contacts: [contactSchema]

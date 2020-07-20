@@ -4,7 +4,8 @@ if (!process.env.NODE_ENV) {
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
-const cors = require('cors');
+const path = require('path');
+//const cors = require('cors');
 const { logger, requestLogger, log4js } = require('./logs/log4js');
 const authRoutes = require('./router/auth.routes');
 const serviceRoutes = require('./router/services.routes');
@@ -17,15 +18,21 @@ mongoose.set('useFindAndModify', false);
 const app = express();
 const server = http.createServer(app);
 
-app.use(cors())
+// app.use(cors())
 
 app.use(log4js.connectLogger(requestLogger));
+
+app.use(express.static('frontend'));
 
 app.use(express.json());
 
 app.use('/auth', authRoutes);
 
 app.use('/api', serviceRoutes);
+
+app.use('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+})
 
 app.use((error, req, res, next) => {
     return res.json({
@@ -70,7 +77,7 @@ mongoose.connect(`${process.env.MONGODB_URI}/${process.env.MONGODB_DBNAME}`, {
 })
     .then(() => {
         logger.info('mongodb connection established');
-        server.listen(process.env.PORT);
+        server.listen(process.env.PORT, '192.168.43.7');
     })
     .catch((error) => {
         logger.error('mongodb connection failed');

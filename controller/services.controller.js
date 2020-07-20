@@ -3,13 +3,14 @@ const Message = require('../model/Message.model');
 const User = require('../model/User.model');
 const Conversation = require('../model/Conversation.model');
 const { triggerEventToServerSocket } = require('../socket-controllers/clientsocket.controller');
+const s3 = require('../config/aws.config');
 
 exports.getUserContacts = (req, res, next) => {
 
     logger.info(`getUserContacts method`)
 
     User.findById(req.userId)
-        .populate("contacts.userId", "email status lastSeen")
+        .populate("contacts.userId", "email status lastSeen profileImage")
         .populate({
             path: "contacts.lastMessage_Id",
             select: "sender content content_type time_created -_id",
@@ -40,7 +41,7 @@ exports.getUserProfile = (req, res, next) => {
     logger.info(`getUserProfile method`);
 
     User.findById(req.userId)
-        .select("email status -_id")
+        .select("email status profileImage")
         .then((user) => {
             if (!user) {
 
@@ -174,7 +175,8 @@ exports.addUser = (req, res, next) => {
                                         email: loggedUser.email,
                                         _id: loggedUser._id,
                                         status: loggedUser.status,
-                                        lastSeen: loggedUser.lastSeen
+                                        lastSeen: loggedUser.lastSeen,
+                                        profileImage: loggedUser.profileImage
                                     },
                                     conversation_Id
                                 }
@@ -188,7 +190,8 @@ exports.addUser = (req, res, next) => {
                                         email: user.email,
                                         _id: user._id,
                                         status: user.status,
-                                        lastSeen: user.lastSeen
+                                        lastSeen: user.lastSeen,
+                                        profileImage: user.profileImage
                                     },
                                     conversation_Id
                                 }
@@ -197,7 +200,7 @@ exports.addUser = (req, res, next) => {
 
                                     success: true,
                                     status: 200,
-                                    message: `logged user contacts updated successfully`,
+                                    message: `${userToBeAdded} added successfully`,
                                     data: addedContact
 
                                 })
@@ -257,11 +260,126 @@ exports.deleteUser = async (req, res, next) => {
         return res.json({
             success: true,
             status: 200,
-            message: `User deleted successfully`
+            message: `contact deleted successfully`
         })
     } catch (error) {
-        logger.error(error);
+        logger.error(`delete method`, error);
         return next(error);
     }
 
 }
+
+exports.deactivateAccount = async (req, res, next) => {
+    logger.info(`deactivateAccount method`);
+
+    try {
+        let loggedUserId = req.userId;
+        let user = await User.findById(loggedUserId);
+        for (let contact of user.contacts) {
+            await Message.deleteMany({ conversation_Id: contact.conversation_Id });
+            await Conversation.deleteOne({ _id: contact.conversation_Id });
+            await User.findOneAndUpdate({ _id: loggedUserId, "contacts.userId": contact.userId }, { $pull: { contacts: { userId: contact.userId } } });
+            await User.findOneAndUpdate({ _id: contact.userId, "contacts.userId": loggedUserId }, { $pull: { contacts: { userId: loggedUserId } } });
+            triggerEventToServerSocket('deleteUser', [contact.userId, loggedUserId]);
+        }
+        await user.deleteOne()
+        logger.info(`Account deactivated successfully for ${user.email}`);
+        return res.json({
+            success: true,
+            status: 200,
+            message: `Account has been Deactivated`
+        })
+    } catch (error) {
+        logger.error(`deactivateAccount method`, error);
+        return next(error);
+    }
+}
+
+exports.urlForUserProfile = (req, res, next) => {
+
+    logger.info(`urlForUserProfile method`);
+
+    let key = `${req.userId}/${Date.now()}.${req.query.type}`;
+    s3.getSignedUrl("putObject", {
+        Bucket: process.env.BUCKET_NAME,
+        ContentType: `image/${req.query.type}`,
+        Key: key
+    }, (err, url) => {
+        if (err) {
+            logger.error(`getSignedUrl error`);
+            logger.error(err);
+            let error = new Error("Error in uploading profile image");
+            return next(error);
+        }
+        res.send({
+            url,
+            key,
+            status: 200,
+            success: true,
+        })
+    })
+}
+
+exports.uploadUserProfile = async (req, res, next) => {
+
+    logger.info(`uploadUserProfile method`);
+
+    let key = req.body.key;
+    let userId = req.userId;
+
+    try {
+        let user = await User.findById(userId);
+        let previousKey = user.profileImage.split(process.env.AWS_BASE_URL)[1];
+
+        if (user.profileImage !== "https://material.angular.io/assets/img/examples/shiba1.jpg") {
+            s3.deleteObject({
+                Bucket: process.env.BUCKET_NAME,
+                Key: previousKey
+            }, async function (err, data) {
+                if (!err) {
+                    logger.info(`previous image has been deleted`);
+                } else {
+                    logger.error(`previous  image deleting failed`);
+                }
+                user.profileImage = `${process.env.AWS_BASE_URL}${key}`;
+                try {
+                    await user.save();
+                    res.send({
+                        success: true,
+                        status: 200,
+                        message: 'Profile image updated successfully',
+                        data: user.profileImage
+                    })
+                } catch (error) {
+                    logger.error(`error due to user.save`);
+                    logger.error(error);
+                    error.message = 'Profile image updation failed';
+                    next(error);
+                }
+            })
+        }
+        else {
+            user.profileImage = `${process.env.AWS_BASE_URL}${key}`;
+            try {
+                await user.save();
+                res.send({
+                    success: true,
+                    status: 200,
+                    message: 'Profile image updated successfully',
+                    data: user.profileImage
+                })
+            } catch (error) {
+                logger.error(`error due to user.save`);
+                logger.error(error);
+                error.message = 'Profile image updation failed';
+                next(error);
+            }
+        }
+    } catch (error) {
+        logger.error(`error due to user.findById`);
+        logger.error(error);
+        error.message = 'Profile image updation failed';
+        next(error);
+    }
+}
+

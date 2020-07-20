@@ -69,19 +69,19 @@ exports.login = (req, res, next) => {
                 bcryptjs.compare(req.body.password, user.password)
                     .then((flag) => {
                         if (!flag) {
-                            const error = new Error('password is incorrect');
-                            error.status = 400;
+                            const error = new Error('username or password is incorrect');
+                            error.status = 404;
                             logger.error(error.message);
                             return next(error);
                         }
                         else {
-                            logger.info('user successfully loggedIn');
+                            logger.info('user login successful');
                             const token = jwt.sign({ id: user._id }, process.env.JWT_SECRETKEY, { expiresIn: '1h' });
                             return res.json({
                                 status: 200,
                                 success: true,
                                 token,
-                                message: 'user successfully loggedIn'
+                                message: 'user login successful'
                             })
                         }
                     })
