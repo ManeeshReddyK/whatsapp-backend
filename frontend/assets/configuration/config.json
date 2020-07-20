@@ -1,6 +1,6 @@
 {
-    "production": false,
-    "url": "",
+    "production": true,
+    "url": " https://messaging-applications.herokuapp.com/",
     "protocol": "http",
     "ip": "192.168.43.7",
     "port": "3000"
