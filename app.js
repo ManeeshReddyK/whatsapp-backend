@@ -77,7 +77,7 @@ mongoose.connect(`${process.env.MONGODB_URI}/${process.env.MONGODB_DBNAME}`, {
 })
     .then(() => {
         logger.info('mongodb connection established');
-        server.listen(process.env.PORT, '192.168.43.7');
+        server.listen(process.env.PORT);
     })
     .catch((error) => {
         logger.error('mongodb connection failed');
