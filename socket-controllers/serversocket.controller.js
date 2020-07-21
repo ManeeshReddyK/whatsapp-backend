@@ -125,9 +125,9 @@ exports.status = (socket, status) => {
                     .then((user) => {
                         user.contacts.forEach(contact => {
                             if (status)
-                                socket.broadcast.to(contact.userId).emit('isOnline', socket.userId);
+                                socket.broadcast.to(contact.userId).emit('isOnline', socket.userId, lastSeen.getTime());
                             else
-                                socket.broadcast.to(contact.userId).emit('isOffline', socket.userId);
+                                socket.broadcast.to(contact.userId).emit('isOffline', socket.userId, lastSeen.getTime());
                         });
                     })
             }
