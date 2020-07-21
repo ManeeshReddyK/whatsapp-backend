@@ -5,7 +5,7 @@ const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
 const path = require('path');
-//const cors = require('cors');
+const cors = require('cors');
 const { logger, requestLogger, log4js } = require('./logs/log4js');
 const authRoutes = require('./router/auth.routes');
 const serviceRoutes = require('./router/services.routes');
@@ -18,7 +18,7 @@ mongoose.set('useFindAndModify', false);
 const app = express();
 const server = http.createServer(app);
 
-// app.use(cors())
+app.use(cors())
 
 app.use(log4js.connectLogger(requestLogger));
 
